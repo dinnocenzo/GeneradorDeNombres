@@ -1,0 +1,23 @@
+{
+  "rubros": {
+    "tecnologia": ["Byte", "Nexo", "Pixel", "Cloud", "Digital", "Logic", "Quantum", "Sync"],
+    "comida": ["Sabor", "Fogon", "Delicia", "Mesa", "Sazon", "Horno", "Cocina", "Brasa"],
+    "ropa": ["Trama", "Hilo", "Estilo", "Moda", "Textil", "Urbano", "Sastre", "Telar"],
+    "fitness": ["Fuerza", "Vital", "Pulso", "Energia", "Power", "Activo", "Impulso", "Ritmo"],
+    "educacion": ["Saber", "Aula", "Mente", "Brujula", "Faro", "Logos", "Semilla", "Cima"],
+    "finanzas": ["Capital", "Valor", "Ancla", "Renta", "Fondo", "Norte", "Cuenta", "Bolsa"],
+    "viajes": ["Ruta", "Rumbo", "Destino", "Travesia", "Horizonte", "Viaje", "Ala", "Camino"],
+    "belleza": ["Aura", "Esencia", "Brillo", "Lumina", "Seda", "Glow", "Bella", "Petalo"]
+  },
+  "paises": {
+    "argentina": ["Pampa", "Andes", "Sur", "Criollo", "Plata", "Patagonia", "Tango", "Aconcagua"],
+    "mexico": ["Azteca", "Sol", "Maya", "Jaguar", "Mezcal", "Nopal", "Quetzal", "Tulum"],
+    "espana": ["Iberia", "Toro", "Flamenco", "Mare", "Castilla", "Sol", "Levante", "Alhambra"],
+    "colombia": ["Andino", "Cafe", "Caribe", "Esmeralda", "Cumbre", "Tierra", "Bogota", "Cartagena"],
+    "chile": ["Cordillera", "Pacifico", "Atacama", "Austral", "Copihue", "Condor", "Sur", "Araucano"],
+    "peru": ["Inca", "Machu", "Andino", "Cusco", "Condor", "Pacha", "Sol", "Amazonas"],
+    "uruguay": ["Rio", "Charrua", "Oriental", "Plata", "Candombe", "Sol", "Costa", "Gaucho"],
+    "estados unidos": ["Liberty", "Eagle", "Stars", "Frontier", "Union", "Pioneer", "Atlantic", "Summit"]
+  },
+  "sufijos": ["Group", "Labs", "Studio", "Co.", "Partners", "Hub", "Works"]
+}

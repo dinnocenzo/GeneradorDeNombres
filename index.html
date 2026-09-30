@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de nombres para empresas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fff;
+      color: #111;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 4rem 1.5rem;
+    }
+
+    main { width: 100%; max-width: 480px; }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 2.5rem;
+    }
+
+    .campos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .campo { display: flex; flex-direction: column; gap: 0.3rem; }
+
+    label.campo > span,
+    .toggle-label,
+    .campo-api > span {
+      font-size: 0.78rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    select, input[type="password"] {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #111;
+      outline: none;
+      appearance: none;
+      width: 100%;
+    }
+
+    select:focus, input[type="password"]:focus { border-color: #111; }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+      width: fit-content;
+    }
+
+    .toggle input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: #111;
+      cursor: pointer;
+    }
+
+    .toggle-label {
+      font-size: 0.78rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      user-select: none;
+    }
+
+    .campo-api {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover:not(:disabled) { background: #333; }
+    button:disabled { background: #bbb; cursor: not-allowed; }
+
+    #error {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #c0392b;
+      min-height: 1.2em;
+    }
+
+    #resultados {
+      margin-top: 2rem;
+      list-style: none;
+      padding: 0;
+    }
+
+    #resultados li {
+      padding: 0.65rem 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 1.05rem;
+    }
+
+    #resultados li:last-child { border-bottom: none; }
+
+    .generado-con {
+      margin-top: 0.75rem;
+      font-size: 0.78rem;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Generador de nombres para empresas</h1>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <label class="campo">
+          <span>Rubro</span>
+          <select id="rubro"></select>
+        </label>
+        <label class="campo">
+          <span>País</span>
+          <select id="pais"></select>
+        </label>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="usar-ia" checked />
+        <span class="toggle-label">Usar IA (Claude Opus)</span>
+      </label>
+
+      <div class="campo-api" id="api-key-section">
+        <span>API Key de Anthropic</span>
+        <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" />
+      </div>
+
+      <button type="submit" id="btn">Generar nombres</button>
+    </form>
+
+    <p id="error"></p>
+
+    <ul id="resultados" hidden></ul>
+    <p class="generado-con" id="generado-con" hidden></p>
+  </main>
+
+  <script>
+    let datos = null;
+
+    async function cargarDatos() {
+      const res = await fetch("generador-nombres/datos.json");
+      datos = await res.json();
+
+      const rubroSelect = document.getElementById("rubro");
+      const paisSelect  = document.getElementById("pais");
+
+      for (const r of Object.keys(datos.rubros).sort()) {
+        rubroSelect.add(new Option(capitalizar(r), r));
+      }
+      for (const p of Object.keys(datos.paises).sort()) {
+        paisSelect.add(new Option(capitalizar(p), p));
+      }
+    }
+
+    function capitalizar(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function azar(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generarClasico(rubro, pais, cantidad = 5) {
+      const formatos = ["{r} {p} {s}", "{p} {r} {s}", "{r} {p}"];
+      const nombres = new Set();
+      while (nombres.size < cantidad) {
+        const fmt = azar(formatos);
+        const nombre = fmt
+          .replace("{r}", azar(datos.rubros[rubro]))
+          .replace("{p}", azar(datos.paises[pais]))
+          .replace("{s}", azar(datos.sufijos));
+        nombres.add(nombre);
+      }
+      return [...nombres].sort();
+    }
+
+    async function generarIA(rubro, pais, apiKey, cantidad = 5) {
+      const prompt =
+        `Generá ${cantidad} nombres creativos y únicos para una empresa ` +
+        `del rubro '${rubro}' en ${capitalizar(pais)}.\n` +
+        `Requisitos:\n` +
+        `- Memorables y originales\n` +
+        `- Que reflejen la identidad del país o del rubro\n` +
+        `- Entre 1 y 3 palabras cada nombre\n` +
+        `Devolvé solo los nombres, uno por línea, sin numeración ni explicaciones.`;
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-opus-4-8",
+          max_tokens: 256,
+          thinking: { type: "adaptive" },
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Error ${res.status}`);
+      }
+
+      const json = await res.json();
+      const texto = json.content.find(b => b.type === "text")?.text ?? "";
+      return texto.trim().split("\n").map(l => l.trim()).filter(Boolean).slice(0, cantidad);
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await cargarDatos();
+
+      const checkbox      = document.getElementById("usar-ia");
+      const apiKeySection = document.getElementById("api-key-section");
+
+      checkbox.addEventListener("change", () => {
+        apiKeySection.hidden = !checkbox.checked;
+      });
+
+      document.getElementById("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const rubro       = document.getElementById("rubro").value;
+        const pais        = document.getElementById("pais").value;
+        const usarIA      = checkbox.checked;
+        const apiKey      = document.getElementById("api-key").value.trim();
+        const btn         = document.getElementById("btn");
+        const resultados  = document.getElementById("resultados");
+        const errorEl     = document.getElementById("error");
+        const generadoCon = document.getElementById("generado-con");
+
+        errorEl.textContent = "";
+        resultados.hidden   = true;
+        resultados.innerHTML = "";
+        generadoCon.hidden  = true;
+
+        btn.disabled    = true;
+        btn.textContent = usarIA ? "Generando con IA..." : "Generando...";
+
+        try {
+          let nombres;
+          if (usarIA) {
+            if (!apiKey) throw new Error("Ingresá tu API Key de Anthropic.");
+            nombres = await generarIA(rubro, pais, apiKey);
+            generadoCon.textContent = "Generado con Claude Opus";
+            generadoCon.hidden = false;
+          } else {
+            nombres = generarClasico(rubro, pais);
+          }
+
+          for (const nombre of nombres) {
+            const li = document.createElement("li");
+            li.textContent = nombre;
+            resultados.appendChild(li);
+          }
+          resultados.hidden = false;
+
+        } catch (err) {
+          errorEl.textContent = err.message;
+        } finally {
+          btn.disabled    = false;
+          btn.textContent = "Generar nombres";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
